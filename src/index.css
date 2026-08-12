@@ -1,0 +1,44 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: dark;
+  --bg: #000000;
+  --panel: rgba(12, 16, 28, 0.78);
+  --border: rgba(255, 255, 255, 0.1);
+  --text: #e8eefc;
+  --muted: #93a0bd;
+  --accent: #5eead4;
+  --accent-2: #7dd3fc;
+  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text);
+}
+
+button,
+select {
+  font: inherit;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+
+.canvas-root {
+  position: absolute;
+  inset: 0;
+}
