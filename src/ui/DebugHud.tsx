@@ -5,11 +5,9 @@ import { perfStats } from '../state/perfStats'
 
 export function DebugHud() {
   const show = useAppStore((s) => s.settings.showDebugHud)
-  const backend = useAppStore((s) => s.rendererBackend)
-  const usingCpuFallback = useAppStore((s) => s.usingCpuFallback)
   const particleCount = useAppStore((s) => s.particleCount)
   const fpsRef = useRef<HTMLSpanElement>(null)
-  const handRef = useRef<HTMLDivElement>(null)
+  const poseRef = useRef<HTMLSpanElement>(null)
 
   useEffect(() => {
     if (!show) return
@@ -17,14 +15,11 @@ export function DebugHud() {
     const tick = () => {
       raf = requestAnimationFrame(tick)
       if (fpsRef.current) fpsRef.current.textContent = String(perfStats.fps)
-      const el = handRef.current
+      const el = poseRef.current
       if (!el) return
-      const { left, right, twoHand } = handStateRef.current
-      el.textContent = [
-        `L ${left.present ? left.pose : '—'} open=${left.openness.toFixed(2)} pinch=${left.pinch.toFixed(2)}`,
-        `R ${right.present ? right.pose : '—'} open=${right.openness.toFixed(2)} pinch=${right.pinch.toFixed(2)}`,
-        `spread ${twoHand.active ? twoHand.spread.toFixed(2) : '—'}`,
-      ].join('\n')
+      const { left, right } = handStateRef.current
+      const hand = left.present ? left : right
+      el.textContent = hand.present ? `${hand.pose}  ${hand.openness.toFixed(2)}` : 'waiting'
     }
     tick()
     return () => cancelAnimationFrame(raf)
@@ -33,22 +28,15 @@ export function DebugHud() {
   if (!show) return null
 
   return (
-    <div className="panel absolute right-4 top-4 z-20 rounded-xl p-3 font-mono text-[11px] leading-5 text-[var(--muted)]">
+    <div className="glass absolute right-5 top-5 z-20 rounded-xl px-3 py-2 font-mono text-[11px] leading-5 text-[var(--muted)]">
       <div>
-        FPS <span ref={fpsRef} className="text-white">
-          60
-        </span>
+        fps <span ref={fpsRef} className="text-[var(--ink)]">60</span>
+        <span className="mx-2 opacity-30">·</span>
+        n <span className="text-[var(--ink)]">{particleCount}</span>
       </div>
       <div>
-        Renderer <span className="text-white">{backend}</span>
+        pose <span ref={poseRef} className="text-[var(--ink)]">waiting</span>
       </div>
-      <div>
-        Sim <span className="text-white">{usingCpuFallback ? 'CPU' : 'GPU'}</span>
-      </div>
-      <div>
-        Particles <span className="text-white">{particleCount}</span>
-      </div>
-      <div ref={handRef} className="mt-2 whitespace-pre text-[10px] text-[var(--accent-2)]" />
     </div>
   )
 }

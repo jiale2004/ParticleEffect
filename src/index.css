@@ -3,13 +3,15 @@
 :root {
   color-scheme: dark;
   --bg: #000000;
-  --panel: rgba(12, 16, 28, 0.78);
-  --border: rgba(255, 255, 255, 0.1);
-  --text: #e8eefc;
-  --muted: #93a0bd;
-  --accent: #5eead4;
-  --accent-2: #7dd3fc;
-  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  --ink: #f4f1ea;
+  --muted: #8a8680;
+  --line: rgba(244, 241, 234, 0.12);
+  --glass: rgba(8, 8, 8, 0.55);
+  --morpho: #4aa3ff;
+  --synapse: #7cf0c2;
+  --firefly: #ffc14a;
+  --serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Times New Roman', serif;
+  --sans: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', sans-serif;
 }
 
 * {
@@ -23,22 +25,71 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
+  background: #000;
+  color: var(--ink);
+  font-family: var(--sans);
 }
 
-button,
-select {
+button {
   font: inherit;
-}
-
-.panel {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
+  cursor: pointer;
 }
 
 .canvas-root {
   position: absolute;
   inset: 0;
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(16px) saturate(1.1);
+}
+
+.kicker {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@keyframes lumen-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes lumen-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.breathe {
+  animation: lumen-breathe 3.6s ease-in-out infinite;
+}
+
+.rise {
+  animation: lumen-rise 0.7s ease-out both;
+}
+
+.vignette {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  background:
+    radial-gradient(ellipse at 50% 42%, transparent 28%, rgba(0, 0, 0, 0.55) 100%),
+    linear-gradient(to top, rgba(0, 0, 0, 0.45), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.28));
 }

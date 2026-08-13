@@ -1,4 +1,5 @@
 import {
+  AdditiveBlending,
   BufferAttribute,
   Color,
   DoubleSide,
@@ -9,58 +10,74 @@ import {
   Object3D,
   PlaneGeometry,
   Quaternion,
+  Shape,
+  ShapeGeometry,
   Vector3,
 } from 'three'
 import type { EffectContext, EffectInstance, ParticleEffect } from '../../types'
 import { CpuSimulator } from '../../fallback/CpuSimulator'
 
-/**
- * Butterflies as double-sided planes with a blue wing gradient.
- */
+function createWingGeometry() {
+  const shape = new Shape()
+  shape.moveTo(0, 0.02)
+  shape.bezierCurveTo(0.22, 0.42, 0.62, 0.36, 0.72, 0.04)
+  shape.bezierCurveTo(0.76, -0.14, 0.4, -0.24, 0.16, -0.1)
+  shape.bezierCurveTo(0.34, -0.46, 0.08, -0.54, 0, -0.2)
+  shape.bezierCurveTo(-0.08, -0.54, -0.34, -0.46, -0.16, -0.1)
+  shape.bezierCurveTo(-0.4, -0.24, -0.76, -0.14, -0.72, 0.04)
+  shape.bezierCurveTo(-0.62, 0.36, -0.22, 0.42, 0, 0.02)
+
+  const geometry = new ShapeGeometry(shape, 8)
+  geometry.scale(0.78, 0.78, 0.78)
+
+  const pos = geometry.attributes.position!
+  const colors = new Float32Array(pos.count * 3)
+  const navy = new Color('#031a4a')
+  const cobalt = new Color('#1a6dff')
+  const ice = new Color('#c4f2ff')
+
+  for (let i = 0; i < pos.count; i++) {
+    const x = Math.abs(pos.getX(i))
+    const y = pos.getY(i)
+    const t = Math.min(1, x / 0.5)
+    const tip = Math.min(1, Math.max(0, (y + 0.35) / 0.55))
+    const col = navy.clone().lerp(cobalt, t).lerp(ice, tip * 0.6)
+    colors[i * 3] = col.r
+    colors[i * 3 + 1] = col.g
+    colors[i * 3 + 2] = col.b
+  }
+  geometry.setAttribute('color', new BufferAttribute(colors, 3))
+  return geometry
+}
+
 function createButterflies(ctx: EffectContext): EffectInstance {
-  const count = Math.min(Math.max(ctx.count, 40), 80)
+  const count = Math.min(Math.max(ctx.count, 48), 110)
 
   const sim = new CpuSimulator(
     count,
     {
-      attract: 9,
-      repel: 12,
-      pinch: 14,
-      wind: 0.15,
-      wander: 0.55,
-      bob: 1.6,
-      radius: 3.2,
-      bounds: 5,
-      damping: 0.93,
+      attract: 11,
+      repel: 15,
+      pinch: 16,
+      wind: 0.22,
+      wander: 0.7,
+      bob: 2.4,
+      radius: 4.2,
+      bounds: 7.2,
+      damping: 0.935,
     },
-    3.5,
+    4,
   )
 
-  const geometry = new PlaneGeometry(0.38, 0.24)
-  const posCount = geometry.attributes.position!.count
-  const wingColors = new Float32Array(posCount * 3)
-  const deep = new Color('#0b3d91')
-  const mid = new Color('#1d6fe8')
-  const light = new Color('#7dd3fc')
-  for (let i = 0; i < posCount; i++) {
-    const x = geometry.attributes.position!.getX(i)
-    const y = geometry.attributes.position!.getY(i)
-    const t = (x + 0.19) / 0.38
-    const tip = (y + 0.12) / 0.24
-    const col = deep.clone().lerp(mid, Math.min(1, Math.max(0, t))).lerp(light, tip * 0.45)
-    wingColors[i * 3] = col.r
-    wingColors[i * 3 + 1] = col.g
-    wingColors[i * 3 + 2] = col.b
-  }
-  geometry.setAttribute('color', new BufferAttribute(wingColors, 3))
-
+  const geometry = createWingGeometry()
   const material = new MeshBasicMaterial({
     color: 0xffffff,
     side: DoubleSide,
     transparent: true,
-    opacity: 0.95,
+    opacity: 0.92,
     depthWrite: false,
     vertexColors: true,
+    blending: AdditiveBlending,
   })
 
   const mesh = new InstancedMesh(geometry, material, count)
@@ -69,33 +86,44 @@ function createButterflies(ctx: EffectContext): EffectInstance {
   mesh.visible = false
   mesh.count = 0
 
-  // Soft per-butterfly tint within the blue family (multiplies vertex gradient)
-  const colors = new Float32Array(count * 3)
+  const tints = new Float32Array(count * 3)
   const c = new Color()
   for (let i = 0; i < count; i++) {
-    const hue = 0.55 + Math.random() * 0.08
-    c.setHSL(hue, 0.7 + Math.random() * 0.2, 0.55 + Math.random() * 0.2)
-    colors[i * 3] = c.r
-    colors[i * 3 + 1] = c.g
-    colors[i * 3 + 2] = c.b
+    c.setHSL(0.55 + Math.random() * 0.08, 0.78, 0.58 + Math.random() * 0.2)
+    tints[i * 3] = c.r
+    tints[i * 3 + 1] = c.g
+    tints[i * 3 + 2] = c.b
   }
-  const colorAttr = new InstancedBufferAttribute(colors, 3)
-  colorAttr.setUsage(DynamicDrawUsage)
-  mesh.instanceColor = colorAttr
+  mesh.instanceColor = new InstancedBufferAttribute(tints, 3)
+
+  const glowGeo = new PlaneGeometry(1.15, 0.7)
+  const glowMat = new MeshBasicMaterial({
+    color: 0x4aa3ff,
+    transparent: true,
+    opacity: 0.18,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    side: DoubleSide,
+  })
+  const glow = new InstancedMesh(glowGeo, glowMat, count)
+  glow.instanceMatrix.setUsage(DynamicDrawUsage)
+  glow.frustumCulled = false
+  glow.visible = false
+  glow.count = 0
 
   const dummy = new Object3D()
+  const glowDummy = new Object3D()
   const quat = new Quaternion()
   const forward = new Vector3(0, 0, 1)
   const dir = new Vector3()
   const flat = new Vector3()
-  const flapSpeed = 16
 
   const updateMatrices = (time: number) => {
     const { positions, velocities, phases } = sim.buffers
     for (let i = 0; i < count; i++) {
       const i3 = i * 3
       const phase = phases[i]!
-      const flap = Math.sin(time * flapSpeed + phase)
+      const flap = Math.sin(time * 13 + phase)
 
       dir.set(velocities[i3]!, velocities[i3 + 1]!, velocities[i3 + 2]!)
       flat.set(dir.x, 0, dir.z)
@@ -103,27 +131,36 @@ function createButterflies(ctx: EffectContext): EffectInstance {
       else flat.normalize()
 
       dummy.position.set(positions[i3]!, positions[i3 + 1]!, positions[i3 + 2]!)
-      dummy.scale.set(0.75 + Math.abs(flap) * 0.55, 1, 1)
+      dummy.scale.set(0.85 + Math.abs(flap) * 0.5, 1.05, 1)
       quat.setFromUnitVectors(forward, flat)
       dummy.quaternion.copy(quat)
-      dummy.rotateX(-0.35)
-      dummy.rotateZ(flap * 0.4)
+      dummy.rotateX(-0.38)
+      dummy.rotateZ(flap * 0.45)
       dummy.updateMatrix()
       mesh.setMatrixAt(i, dummy.matrix)
+
+      glowDummy.position.copy(dummy.position)
+      glowDummy.quaternion.copy(dummy.quaternion)
+      glowDummy.scale.set(1.8 + Math.abs(flap) * 0.4, 1.5, 1)
+      glowDummy.updateMatrix()
+      glow.setMatrixAt(i, glowDummy.matrix)
     }
     mesh.instanceMatrix.needsUpdate = true
+    glow.instanceMatrix.needsUpdate = true
   }
 
   return {
-    roots: [mesh],
+    roots: [glow, mesh],
     get summoned() {
       return sim.summoned
     },
     summon(origin) {
       if (sim.summoned) return
-      sim.summonAt(origin, 0.5, 3.5)
+      sim.summonAt(origin, 0.85, 6.2)
       mesh.count = count
+      glow.count = count
       mesh.visible = true
+      glow.visible = true
       updateMatrices(0)
     },
     update(dt, forces) {
@@ -135,19 +172,23 @@ function createButterflies(ctx: EffectContext): EffectInstance {
       geometry.dispose()
       material.dispose()
       mesh.dispose()
+      glowGeo.dispose()
+      glowMat.dispose()
+      glow.dispose()
     },
   }
 }
 
 export const butterfliesEffect: ParticleEffect = {
   id: 'butterflies',
-  name: 'Butterflies',
-  maxCount: { webgpu: 80, fallback: 60 },
+  name: 'Morpho',
+  epithet: 'A cathedral of blue wings',
+  accent: '#4aa3ff',
+  maxCount: { webgpu: 110, fallback: 72 },
   gestureHints: [
-    { pose: 'Open palm', description: 'Butterflies gather and hover at your hand' },
-    { pose: 'Fist', description: 'Scatter into the air' },
-    { pose: 'Pinch', description: 'Draw a small swarm to your fingertips' },
-    { pose: 'Two-hand spread', description: 'Widen or tighten the flock' },
+    { pose: 'Open palm', description: 'A flock gathers around your hand' },
+    { pose: 'Fist', description: 'They explode into the void' },
+    { pose: 'Pinch', description: 'A few hang on your fingertips' },
   ],
   create: createButterflies,
 }

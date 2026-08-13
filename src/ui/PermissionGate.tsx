@@ -24,29 +24,38 @@ export function PermissionGate() {
   if (permission === 'granted') return null
 
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/95 p-6">
-      <div className="panel max-w-md rounded-2xl p-8 text-center shadow-2xl">
-        <p className="mb-2 text-xs uppercase tracking-[0.2em] text-[var(--muted)]">
-          Gesture Particles
-        </p>
-        <h1 className="mb-3 text-3xl font-semibold tracking-tight">Enable your camera</h1>
-        <p className="mb-6 text-sm leading-relaxed text-[var(--muted)]">
-          Hand tracking runs entirely on-device with MediaPipe. Video never leaves this browser
-          tab — nothing is uploaded.
+    <div className="absolute inset-0 z-30 flex items-center justify-center overflow-hidden bg-black p-6">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(26,109,255,0.18),transparent_58%)]" />
+      <div className="pointer-events-none absolute -top-24 left-1/2 h-[28rem] w-[28rem] -translate-x-1/2 rounded-full bg-[#1a6dff]/10 blur-3xl" />
+      <div className="rise relative max-w-2xl text-center">
+        <p className="kicker mb-8">Lumen</p>
+        <div className="breathe mx-auto mb-10 h-24 w-24 rounded-full border border-white/15 shadow-[0_0_80px_rgba(74,163,255,0.35)]">
+          <div className="mx-auto mt-[1.15rem] h-14 w-14 rounded-full bg-gradient-to-b from-[#9fe8ff] via-[#1a6dff] to-[#031a4a]" />
+        </div>
+        <h1
+          className="mb-6 text-[clamp(2.8rem,7vw,5.6rem)] leading-[0.95] font-normal tracking-tight"
+          style={{ fontFamily: 'var(--serif)' }}
+        >
+          Raise a hand.
+          <br />
+          Command the dark.
+        </h1>
+        <p className="mx-auto mb-10 max-w-md text-base leading-relaxed text-[var(--muted)]">
+          Morpho. Synapse. Fireflies. Three living cathedrals unfold from your palm — on this
+          machine only, never uploaded.
         </p>
         {permission === 'denied' && (
           <p className="mb-4 text-sm text-rose-300">
-            Camera permission was blocked. Allow camera access in the browser site settings, then
-            try again.
+            Camera access was blocked. Allow it in site settings, then try again.
           </p>
         )}
         <button
           type="button"
           onClick={() => void request()}
           disabled={permission === 'requesting'}
-          className="rounded-xl bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-[#042f2e] transition hover:brightness-110 disabled:opacity-60"
+          className="rounded-full bg-[var(--ink)] px-9 py-3.5 text-sm font-medium tracking-wide text-black transition hover:opacity-90 disabled:opacity-50"
         >
-          {permission === 'requesting' ? 'Requesting…' : 'Allow camera'}
+          {permission === 'requesting' ? 'Opening the void…' : 'Enter the field'}
         </button>
       </div>
     </div>

@@ -7,19 +7,19 @@ export function GestureLegend() {
   if (!effect) return null
 
   return (
-    <div className="panel absolute bottom-4 left-4 z-20 max-w-xs rounded-xl p-4">
-      <p className="mb-2 text-xs uppercase tracking-[0.18em] text-[var(--muted)]">Gestures</p>
+    <div className="glass rise absolute bottom-5 left-5 z-20 max-w-[19rem] rounded-2xl p-6">
+      <p className="kicker mb-2">{effect.name}</p>
+      <p className="mb-5 text-2xl leading-snug" style={{ fontFamily: 'var(--serif)' }}>
+        {effect.epithet}
+      </p>
       <ul className="space-y-2 text-sm">
         {effect.gestureHints.map((hint) => (
-          <li key={hint.pose}>
-            <span className="font-medium text-[var(--accent)]">{hint.pose}</span>
+          <li key={hint.pose} className="leading-snug">
+            <span className="text-[var(--ink)]">{hint.pose}</span>
             <span className="text-[var(--muted)]"> — {hint.description}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-[11px] leading-relaxed text-[var(--muted)]">
-        Privacy: all camera frames stay on-device. No video is uploaded.
-      </p>
     </div>
   )
 }

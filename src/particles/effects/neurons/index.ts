@@ -16,7 +16,7 @@ import type { HandForceUniforms } from '../../../state/handState'
 function buildEdges(positions: Float32Array, count: number, maxDist: number, maxEdges: number) {
   const edges: number[] = []
   const maxDist2 = maxDist * maxDist
-  const window = Math.min(24, count)
+  const window = Math.min(22, count)
   for (let i = 0; i < count; i++) {
     const i3 = i * 3
     const ix = positions[i3]!
@@ -40,26 +40,26 @@ function buildEdges(positions: Float32Array, count: number, maxDist: number, max
 }
 
 function createNeurons(ctx: EffectContext): EffectInstance {
-  const count = Math.min(ctx.count, 120)
+  const count = Math.min(ctx.count, 110)
 
   const sim = new CpuSimulator(
     count,
     {
-      attract: 3.2,
-      repel: 5.5,
-      pinch: 7,
+      attract: 3.6,
+      repel: 6.2,
+      pinch: 8,
       wind: 0.05,
-      wander: 0.15,
-      radius: 2.5,
-      bounds: 4.2,
-      damping: 0.97,
+      wander: 0.16,
+      radius: 3.2,
+      bounds: 6.4,
+      damping: 0.972,
     },
     3.2,
   )
 
   const c = new Color()
   for (let i = 0; i < count; i++) {
-    c.setHSL(0.55 + Math.random() * 0.15, 0.8, 0.55 + Math.random() * 0.25)
+    c.setHSL(0.46 + Math.random() * 0.18, 0.85, 0.58 + Math.random() * 0.22)
     sim.buffers.colors[i * 3] = c.r
     sim.buffers.colors[i * 3 + 1] = c.g
     sim.buffers.colors[i * 3 + 2] = c.b
@@ -70,7 +70,7 @@ function createNeurons(ctx: EffectContext): EffectInstance {
   nodeGeo.setAttribute('color', new BufferAttribute(sim.buffers.colors, 3))
 
   const nodeMat = new PointsMaterial({
-    size: 0.1,
+    size: 0.14,
     vertexColors: true,
     transparent: true,
     opacity: 0.95,
@@ -93,16 +93,13 @@ function createNeurons(ctx: EffectContext): EffectInstance {
     'position',
     new BufferAttribute(linePositions, 3).setUsage(DynamicDrawUsage),
   )
-  lineGeo.setAttribute(
-    'color',
-    new BufferAttribute(lineColors, 3).setUsage(DynamicDrawUsage),
-  )
+  lineGeo.setAttribute('color', new BufferAttribute(lineColors, 3).setUsage(DynamicDrawUsage))
   lineGeo.setDrawRange(0, 0)
 
   const lineMat = new LineBasicMaterial({
     vertexColors: true,
     transparent: true,
-    opacity: 0.65,
+    opacity: 0.72,
     depthWrite: false,
     blending: AdditiveBlending,
   })
@@ -110,12 +107,12 @@ function createNeurons(ctx: EffectContext): EffectInstance {
   lines.frustumCulled = false
   lines.visible = false
 
-  const pulseColor = new Color(0xa5f3fc)
-  const baseColor = new Color(0x1e3a5f)
-  let frame = 0
+  const pulseColor = new Color('#d8fff4')
+  const axon = new Color('#0c3d38')
+  const spark = new Color('#7cf0c2')
 
   const rebuildEdges = () => {
-    edgeList = buildEdges(sim.buffers.positions, count, 1.35, maxEdgeSlots)
+    edgeList = buildEdges(sim.buffers.positions, count, 1.42, maxEdgeSlots)
     edgeCount = edgeList.length / 2
     for (let e = 0; e < edgeCount; e++) phases[e] = Math.random()
     lineGeo.setDrawRange(0, edgeCount * 2)
@@ -160,8 +157,8 @@ function createNeurons(ctx: EffectContext): EffectInstance {
       linePositions[o + 5] = bz
 
       const len = Math.hypot(ax - bx, ay - by, az - bz)
-      const fade = Math.max(0, 1 - len / 1.8)
-      const pulse = (Math.sin(time * 3.5 + phases[e]! * Math.PI * 2) * 0.5 + 0.5) * fade
+      const fade = Math.max(0, 1 - len / 1.9)
+      const pulse = (Math.sin(time * 4.2 + phases[e]! * Math.PI * 2) * 0.5 + 0.5) ** 3
 
       let exciteBoost = 0
       if (excited) {
@@ -169,11 +166,11 @@ function createNeurons(ctx: EffectContext): EffectInstance {
           Math.hypot(ax - ex, ay - ey, az - ez),
           Math.hypot(bx - ex, by - ey, bz - ez),
         )
-        exciteBoost = Math.max(0, 1 - d / 2.2) * 0.8
+        exciteBoost = Math.max(0, 1 - d / 2.4)
       }
 
-      const intensity = Math.min(1, fade * 0.45 + pulse * 0.55 + exciteBoost)
-      c.copy(baseColor).lerp(pulseColor, intensity)
+      const intensity = Math.min(1, fade * 0.28 + pulse * fade * 0.85 + exciteBoost * 0.7)
+      c.copy(axon).lerp(spark, Math.min(1, intensity)).lerp(pulseColor, pulse * fade * 0.5)
       lineColors[o] = c.r
       lineColors[o + 1] = c.g
       lineColors[o + 2] = c.b
@@ -187,13 +184,13 @@ function createNeurons(ctx: EffectContext): EffectInstance {
   }
 
   return {
-    roots: [nodes, lines],
+    roots: [lines, nodes],
     get summoned() {
       return sim.summoned
     },
     summon(origin) {
       if (sim.summoned) return
-      sim.summonAt(origin, 0.5, 3)
+      sim.summonAt(origin, 1.1, 4.4)
       rebuildEdges()
       nodes.visible = true
       lines.visible = true
@@ -204,8 +201,7 @@ function createNeurons(ctx: EffectContext): EffectInstance {
       if (!sim.summoned) return
       sim.step(dt, forces)
       ;(nodeGeo.getAttribute('position') as BufferAttribute).needsUpdate = true
-      frame += 1
-      if ((frame & 1) === 0) updateEdges(forces.time, forces)
+      updateEdges(forces.time, forces)
     },
     dispose() {
       nodeGeo.dispose()
@@ -218,13 +214,14 @@ function createNeurons(ctx: EffectContext): EffectInstance {
 
 export const neuronsEffect: ParticleEffect = {
   id: 'neurons',
-  name: 'Neurons',
-  maxCount: { webgpu: 120, fallback: 80 },
+  name: 'Synapse',
+  epithet: 'A mind unfolding in the dark',
+  accent: '#7cf0c2',
+  maxCount: { webgpu: 110, fallback: 72 },
   gestureHints: [
-    { pose: 'Open palm', description: 'Excite nearby neurons; pulses radiate outward' },
-    { pose: 'Fist', description: 'Disrupt local clusters' },
-    { pose: 'Pinch', description: 'Focus excitation at your fingertips' },
-    { pose: 'Two-hand spread', description: 'Stretch or compress the network' },
+    { pose: 'Open palm', description: 'Signals race toward you' },
+    { pose: 'Fist', description: 'The lattice recoils' },
+    { pose: 'Pinch', description: 'A single spark follows your pinch' },
   ],
   create: createNeurons,
 }

@@ -24,6 +24,7 @@ export function ParticleLayer() {
   const selectedEffect = useAppStore((s) => s.selectedEffect)
   const particleCount = useAppStore((s) => s.particleCount)
   const usingCpuFallback = useAppStore((s) => s.usingCpuFallback)
+  const setAwakened = useAppStore((s) => s.setAwakened)
 
   const effectKey = useMemo(
     () => `${selectedEffect}:${usingCpuFallback ? 'cpu' : 'gpu'}`,
@@ -43,12 +44,11 @@ export function ParticleLayer() {
     const effect = EffectRegistry.get(selectedEffect)
     if (!effect) return
 
-    const webgpu = !usingCpuFallback && 'computeAsync' in gl
-    const caps = webgpu ? effect.maxCount.webgpu : effect.maxCount.fallback
+    const caps = usingCpuFallback ? effect.maxCount.fallback : effect.maxCount.webgpu
     const count = Math.min(particleCount, caps)
     const instance = effect.create({
       count,
-      webgpu: false, // force CPU sims — stable 60 FPS on Mac
+      webgpu: false,
       renderer: null,
       forces: forcesRef.current,
     })
@@ -83,6 +83,7 @@ export function ParticleLayer() {
       instance.summon(origin)
       if (group) group.visible = true
       for (const root of instance.roots) root.visible = true
+      setAwakened(true)
     }
 
     if (instance?.summoned) {
